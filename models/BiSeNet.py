@@ -83,6 +83,7 @@ def build_bisenet(inputs, num_classes, preset_model='BiSeNet', frontend="ResNet1
 
     ### Context path
     logits, end_points, frontend_scope, init_fn  = frontend_builder.build_frontend(inputs, frontend, pretrained_dir=pretrained_dir, is_training=is_training)
+    print(end_points)
 
     net_4 = AttentionRefinementModule(end_points['pool4'], n_filters=512)
 
