@@ -7,7 +7,7 @@ from utils import utils, helpers
 from builders import model_builder
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--image', type=str, default=None, required=True, help='The image you want to predict on. ')
+parser.add_argument('--imagepath', type=str, default=None, required=True, help='The image you want to predict on. ')
 parser.add_argument('--checkpoint_path', type=str, default=None, required=True, help='The path to the latest checkpoint weights for your model.')
 parser.add_argument('--crop_height', type=int, default=512, help='Height of cropped input image to network')
 parser.add_argument('--crop_width', type=int, default=512, help='Width of cropped input image to network')
@@ -25,7 +25,7 @@ print("Model -->", args.model)
 print("Crop Height -->", args.crop_height)
 print("Crop Width -->", args.crop_width)
 print("Num Classes -->", num_classes)
-print("Image -->", args.image)
+print("Image path -->", args.imagepath)
 
 # Initializing network
 config = tf.ConfigProto()
@@ -36,10 +36,10 @@ net_input = tf.placeholder(tf.float32,shape=[None,None,None,3])
 net_output = tf.placeholder(tf.float32,shape=[None,None,None,num_classes]) 
 
 network, _ = model_builder.build_model(args.model, net_input=net_input,
-                                        num_classes=num_classes,
+                                        num_classes=17,
                                         crop_width=args.crop_width,
                                         crop_height=args.crop_height,
-                                        is_training=False)
+                                        is_training=False, frontend="ResNet50")
 
 sess.run(tf.global_variables_initializer())
 
@@ -47,24 +47,30 @@ print('Loading model checkpoint weights')
 saver=tf.train.Saver(max_to_keep=1000)
 saver.restore(sess, args.checkpoint_path)
 
+for img in os.listdir(args.imagepath):
+    print("Testing image " + img)
+    image = os.path.join(args.imagepath, img)
+    loaded_image = utils.load_image(image)
+    resized_image = cv2.resize(loaded_image, (args.crop_width, args.crop_height))
+    input_image = np.expand_dims(np.float32(resized_image[:args.crop_height, :args.crop_width]), axis=0) / 255.0
 
-print("Testing image " + args.image)
+    st = time.time()
+    output_image = sess.run(network, feed_dict={net_input: input_image})
 
-loaded_image = utils.load_image(args.image)
-resized_image =cv2.resize(loaded_image, (args.crop_width, args.crop_height))
-input_image = np.expand_dims(np.float32(resized_image[:args.crop_height, :args.crop_width]),axis=0)/255.0
+    run_time = time.time() - st
 
-st = time.time()
-output_image = sess.run(network,feed_dict={net_input:input_image})
+    output_image = np.array(output_image[0, :, :, :])
+    output_image = helpers.reverse_one_hot(output_image)
 
-run_time = time.time()-st
+    out_vis_image = helpers.colour_code_segmentation(output_image, label_values)
+    overlayed_img = 0.35 * resized_image + 0.65 * out_vis_image
+    # overlayed_img = overlayed_img.astype(np.uint8)
 
-output_image = np.array(output_image[0,:,:,:])
-output_image = helpers.reverse_one_hot(output_image)
+    file_name = utils.filepath_to_name(image)
+    cv2.imwrite("preds/%s_pred.png" % (file_name), cv2.cvtColor(np.uint8(overlayed_img), cv2.COLOR_RGB2BGR))
 
-out_vis_image = helpers.colour_code_segmentation(output_image, label_values)
-file_name = utils.filepath_to_name(args.image)
-cv2.imwrite("%s_pred.png"%(file_name),cv2.cvtColor(np.uint8(out_vis_image), cv2.COLOR_RGB2BGR))
+
+
 
 print("")
 print("Finished!")

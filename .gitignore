@@ -1,5 +1,7 @@
 *.pyc
 *.graph
+*.pb
+*.uff
 models/*.graph
 models/*.pyc
 models/*.ckpt*
@@ -13,3 +15,5 @@ loss_vs_epochs.png
 colour_codes.csv
 CamVid_train.tfrecords
 tfrecords.py
+pred
+export/exported*

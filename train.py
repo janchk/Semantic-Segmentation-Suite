@@ -89,12 +89,13 @@ sess=tf.Session(config=config)
 
 
 # Compute your softmax cross entropy loss
-net_input = tf.placeholder(tf.float32,shape=[None,None,None,3])
-net_output = tf.placeholder(tf.float32,shape=[None,None,None,num_classes])
+net_input = tf.placeholder(tf.float32,shape=[None,None,None,3], name="input")
+net_output = tf.placeholder(tf.int64,shape=[None,None,None,num_classes])
 
 network, init_fn = model_builder.build_model(model_name=args.model, frontend=args.frontend, net_input=net_input, num_classes=num_classes, crop_width=args.crop_width, crop_height=args.crop_height, is_training=True)
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=network, labels=net_output))
+new_network = tf.nn.softmax(network, name="output_name")
 
 opt = tf.train.RMSPropOptimizer(learning_rate=0.0001, decay=0.995).minimize(loss, var_list=[var for var in tf.trainable_variables()])
 
@@ -305,35 +306,43 @@ for epoch in range(args.epoch_start_i, args.num_epochs):
 
     fig1, ax1 = plt.subplots(figsize=(11, 8))
 
-    ax1.plot(range(epoch+1), avg_scores_per_epoch)
-    ax1.set_title("Average validation accuracy vs epochs")
-    ax1.set_xlabel("Epoch")
-    ax1.set_ylabel("Avg. val. accuracy")
+    try:
+        ax1.plot(range(epoch+1), avg_scores_per_epoch)
+        ax1.set_title("Average validation accuracy vs epochs")
+        ax1.set_xlabel("Epoch")
+        ax1.set_ylabel("Avg. val. accuracy")
 
+        plt.savefig('accuracy_vs_epochs.png')
 
-    plt.savefig('accuracy_vs_epochs.png')
+        plt.clf()
+    except:
+        pass
 
-    plt.clf()
+    try:
+        fig2, ax2 = plt.subplots(figsize=(11, 8))
 
-    fig2, ax2 = plt.subplots(figsize=(11, 8))
+        ax2.plot(range(epoch+1), avg_loss_per_epoch)
+        ax2.set_title("Average loss vs epochs")
+        ax2.set_xlabel("Epoch")
+        ax2.set_ylabel("Current loss")
 
-    ax2.plot(range(epoch+1), avg_loss_per_epoch)
-    ax2.set_title("Average loss vs epochs")
-    ax2.set_xlabel("Epoch")
-    ax2.set_ylabel("Current loss")
+        plt.savefig('loss_vs_epochs.png')
 
-    plt.savefig('loss_vs_epochs.png')
+        plt.clf()
+    except:
+        pass
 
-    plt.clf()
+    try:
+        fig3, ax3 = plt.subplots(figsize=(11, 8))
 
-    fig3, ax3 = plt.subplots(figsize=(11, 8))
+        ax3.plot(range(epoch+1), avg_iou_per_epoch)
+        ax3.set_title("Average IoU vs epochs")
+        ax3.set_xlabel("Epoch")
+        ax3.set_ylabel("Current IoU")
 
-    ax3.plot(range(epoch+1), avg_iou_per_epoch)
-    ax3.set_title("Average IoU vs epochs")
-    ax3.set_xlabel("Epoch")
-    ax3.set_ylabel("Current IoU")
-
-    plt.savefig('iou_vs_epochs.png')
+        plt.savefig('iou_vs_epochs.png')
+    except:
+        pass
 
 
 

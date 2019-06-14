@@ -24,9 +24,9 @@ def build_frontend(inputs, frontend, is_training=True, pretrained_dir="models"):
             init_fn = slim.assign_from_checkpoint_fn(model_path=os.path.join(pretrained_dir, 'resnet_v2_152.ckpt'), var_list=slim.get_model_variables('resnet_v2_152'), ignore_missing_vars=True)
     elif frontend == 'MobileNetV2':
         with slim.arg_scope(mobilenet_v2.training_scope()):
-            logits, end_points = mobilenet_v2.mobilenet(inputs, is_training=is_training, scope='mobilenet_v2', base_only=True)
+            logits, end_points = mobilenet_v2.mobilenet(inputs, is_training=is_training, scope='mobilenet_v2')
             frontend_scope='mobilenet_v2'
-            init_fn = slim.assign_from_checkpoint_fn(model_path=os.path.join(pretrained_dir, 'mobilenet_v2.ckpt'), var_list=slim.get_model_variables('mobilenet_v2'), ignore_missing_vars=True)
+            init_fn = slim.assign_from_checkpoint_fn(model_path=os.path.join(pretrained_dir, 'mobilenet_v2_1.4_224.ckpt'), var_list=slim.get_model_variables('mobilenet_v2_1.4_224'), ignore_missing_vars=True)
     elif frontend == 'InceptionV4':
         with slim.arg_scope(inception_v4.inception_v4_arg_scope()):
             logits, end_points = inception_v4.inception_v4(inputs, is_training=is_training, scope='inception_v4')
