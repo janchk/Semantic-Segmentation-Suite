@@ -3,7 +3,7 @@
 *.pb
 *.uff
 venv/
-CamVid/
+CamVid/*
 models/*.graph
 models/*.pyc
 models/*.ckpt*
