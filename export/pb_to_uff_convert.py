@@ -12,6 +12,13 @@ Nvidia any time longer.
 
 
 def optimize_pb_graph(graph_def, output_nodes, output_name,  sess):
+    """
+    :param graph_def:
+    :param output_nodes:
+    :param output_name: name of output file with .uff extension
+    :param sess:
+    :return: written file
+    """
     frozen_graph = tf.graph_util.convert_variables_to_constants(
         sess, graph_def, output_nodes)
     tf.graph_util.remove_training_nodes(frozen_graph)

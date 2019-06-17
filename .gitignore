@@ -2,8 +2,12 @@
 *.graph
 *.pb
 *.uff
+./idea
+./vscode
 venv/
 CamVid/*
+autovision_dataset/*
+CamVid_dataset/*
 models/*.graph
 models/*.pyc
 models/*.ckpt*
