@@ -43,7 +43,7 @@ parser.add_argument('--dataset', type=str, default="CamVid", help='Dataset you a
 parser.add_argument('--crop_height', type=int, default=512, help='Height of cropped input image to network')
 parser.add_argument('--crop_width', type=int, default=512, help='Width of cropped input image to network')
 parser.add_argument('--batch_size', type=int, default=1, help='Number of images in each batch')
-parser.add_argument('--num_val_images', type=int, default=20, help='The number of images to used for validations')
+parser.add_argument('--num_val_images', type=int, default=100, help='The number of images to used for validations')
 parser.add_argument('--h_flip', type=str2bool, default=False,
                     help='Whether to randomly flip the image horizontally for data augmentation')
 parser.add_argument('--v_flip', type=str2bool, default=False,
@@ -102,24 +102,31 @@ sess = tf.Session(config=config)
 
 # Compute your softmax cross entropy loss
 net_input = tf.placeholder(tf.float32, shape=[None, None, None, 3], name="input")
-net_output = tf.placeholder(tf.int64, shape=[None, None, None, num_classes])
+net_output = tf.placeholder(tf.float32, shape=[None, None, None, num_classes])
 
 network, init_fn = model_builder.build_model(model_name=args.model, frontend=args.frontend, net_input=net_input,
                                              num_classes=num_classes, crop_width=args.crop_width,
                                              crop_height=args.crop_height, is_training=True)
 # Modified part
-class_weights = \
-    tf.constant([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 4.0, 1.0, 1.0, 1.0]])
+# class_weights = \
+#    tf.constant([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 4.0, 1.0, 1.0, 1.0])
 
-weights = tf.reduce_sum(class_weights * net_input, axis=1)
+# weights = tf.reduce_sum(class_weights * net_output, axis=1)
 
-unweighted_loss = tf.nn.softmax_cross_entropy_with_logits(logits=network, labels=net_output)
+# loss = tf.losses.softmax_cross_entropy(net_output, network, weights)
 
-weighted_loss = unweighted_loss * weights
+# unweighted_loss = tf.nn.softmax_cross_entropy_with_logits(logits=network, labels=net_output)
 
-loss = tf.reduce_mean(weighted_loss)
+# weighted_loss = unweighted_loss * weights
 
-new_network = tf.nn.softmax(network, name="output_name")
+# loss = tf.reduce_mean(weighted_loss)
+
+# new_network = tf.nn.softmax(network, name="output_name")
+
+loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=network, labels=net_output))
+
+new_network = tf.argmax(network, name="output_name")
+#new_network = tf.nn.softmax(network, name="output_name")
 
 opt = tf.train.RMSPropOptimizer(learning_rate=0.0001, decay=0.995).minimize(loss, var_list=[var for var in
                                                                                             tf.trainable_variables()])
@@ -164,6 +171,8 @@ print("")
 avg_loss_per_epoch = []
 avg_scores_per_epoch = []
 avg_iou_per_epoch = []
+# For person only
+person_accuracy_per_epoch = []
 
 # Which validation images do we want
 val_indices = []
@@ -199,6 +208,8 @@ for epoch in range(args.epoch_start_i, args.num_epochs):
             id = id_list[index]
             input_image = utils.load_image(train_input_names[id])
             output_image = utils.load_image(train_output_names[id])
+            print("TRAIN OUTPUT NAMES " + train_output_names[id])
+            print("TRAIN INPUT  NAMES " + train_input_names[id])
 
             with tf.device('/cpu:0'):
                 input_image, output_image = data_augmentation(input_image, output_image)
@@ -300,6 +311,9 @@ for epoch in range(args.epoch_start_i, args.num_epochs):
         avg_score = np.mean(scores_list)
         class_avg_scores = np.mean(class_scores_list, axis=0)
         avg_scores_per_epoch.append(avg_score)
+
+        person_accuracy_per_epoch.append(class_avg_scores[13])
+
         avg_precision = np.mean(precision_list)
         avg_recall = np.mean(recall_list)
         avg_f1 = np.mean(f1_list)
@@ -326,10 +340,10 @@ for epoch in range(args.epoch_start_i, args.num_epochs):
     utils.LOG(train_time)
     scores_list = []
 
-    fig1, ax1 = plt.subplots(figsize=(11, 8))
-
     try:
-        ax1.plot(range(epoch + 1), avg_scores_per_epoch)
+        fig1, ax1 = plt.subplots(figsize=(11, 8))
+
+        ax1.plot(range(0, epoch + 1, args.validation_step), avg_scores_per_epoch)
         ax1.set_title("Average validation accuracy vs epochs")
         ax1.set_xlabel("Epoch")
         ax1.set_ylabel("Avg. val. accuracy")
@@ -338,6 +352,23 @@ for epoch in range(args.epoch_start_i, args.num_epochs):
 
         plt.clf()
     except:
+        pass
+
+    try:
+        fig4, ax4 = plt.subplots(figsize=(11, 8))
+
+        ax4.plot(range(0, epoch + 1, args.validation_step), person_accuracy_per_epoch)
+        ax4.set_title("Person validation accuracy vs epochs")
+        ax4.set_xlabel("Epoch")
+        ax4.set_ylabel("Prs. val. accuracy")
+
+        plt.savefig('person_accuracy_vs_epochs.png')
+
+        plt.clf()
+    except ValueError as e:
+        print(e)
+        print(person_accuracy_per_epoch)
+        print(range(epoch + 1))
         pass
 
     try:
@@ -357,7 +388,7 @@ for epoch in range(args.epoch_start_i, args.num_epochs):
     try:
         fig3, ax3 = plt.subplots(figsize=(11, 8))
 
-        ax3.plot(range(epoch + 1), avg_iou_per_epoch)
+        ax3.plot(range(0, epoch + 1, args.validation_step), avg_iou_per_epoch)
         ax3.set_title("Average IoU vs epochs")
         ax3.set_xlabel("Epoch")
         ax3.set_ylabel("Current IoU")

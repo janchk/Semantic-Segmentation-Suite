@@ -2,6 +2,7 @@
 *.graph
 *.pb
 *.uff
+*.tar.gz
 ./idea
 ./vscode
 venv/
