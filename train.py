@@ -101,7 +101,7 @@ config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
 
 # Compute your softmax cross entropy loss
-net_input = tf.placeholder(tf.float32, shape=[None, None, None, 3], name="input")
+net_input = tf.placeholder(tf.float32, shape=[None, 512, 512, 3])
 net_output = tf.placeholder(tf.float32, shape=[None, None, None, num_classes])
 
 network, init_fn = model_builder.build_model(model_name=args.model, frontend=args.frontend, net_input=net_input,
@@ -121,12 +121,15 @@ network, init_fn = model_builder.build_model(model_name=args.model, frontend=arg
 
 # loss = tf.reduce_mean(weighted_loss)
 
-# new_network = tf.nn.softmax(network, name="output_name")
+# new_network = tf.placeholder(tf.float32, shape=[1, 512, 512, 17], name="output_name")/
+
 
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=network, labels=net_output))
 
-new_network = tf.argmax(network, name="output_name")
-#new_network = tf.nn.softmax(network, name="output_name")
+
+new_network_node = tf.argmax(network, name="output_name_argmax")
+new_network = tf.nn.softmax(network, name="output_name_softmax")
+new_network = tf.argmax(new_network, name="output_name_softmax_argmax")
 
 opt = tf.train.RMSPropOptimizer(learning_rate=0.0001, decay=0.995).minimize(loss, var_list=[var for var in
                                                                                             tf.trainable_variables()])

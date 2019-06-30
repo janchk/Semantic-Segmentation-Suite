@@ -19,25 +19,25 @@ def optimize_pb_graph(graph_def, output_nodes, output_name,  sess):
     :param sess:
     :return: written file
     """
-    frozen_graph = tf.graph_util.convert_variables_to_constants(
+    graph_def = tf.graph_util.convert_variables_to_constants(
         sess, graph_def, output_nodes)
-    tf.graph_util.remove_training_nodes(frozen_graph)
+    tf.graph_util.remove_training_nodes(graph_def)
     name = output_name.split(".")[0]
     output_name = "%s.uff" %name
     uff.from_tensorflow(
-        frozen_graph, output_nodes,
+        graph_def, output_nodes,
         output_filename=output_name,
-        text=True,
+        # text=True,
         # list_nodes=True,
         # write_preprocessed=True,
     )
 
 
 if __name__ == "__main__":
-    input_filename = "frozen_model_softmax_output.pb"  # Specify proper path to .pb graph
-    output_name = "exported/unet_trt_last.uff"  # Path to optimized uff model
+    input_filename = "../protobufs/frozen_model_softmax_output.pb"  # Specify proper path to .pb graph
+    output_name = "exported/unet_trt_last_old.uff"  # Path to optimized uff model
 
-    output_nodes = ["output_name"]
+    output_nodes = ["logits/BiasAdd"]
     graph = tf.Graph()
     with graph.as_default():
         with tf.Session() as sess:

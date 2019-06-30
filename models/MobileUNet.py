@@ -3,33 +3,17 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import numpy as np
 
-
-def ConvBlock(inputs, n_filters, kernel_size=[3,3]):
+def ConvBlock(inputs, n_filters, kernel_size=[3, 3]):
 	"""
-
-	:param inputs: Tensor input
-	:param n_filters:
-	:param kernel_size:
-	:return:
-
-	Old type of batch normalization in case of tensorrt optimization
+	Builds the conv block for MobileNets
+	Apply successivly a 2D convolution, BatchNormalization relu
 	"""
+	# Skip pointwise by setting num_outputs=Non
 	net = slim.conv2d(inputs, n_filters, kernel_size=[1, 1], activation_fn=None)
 	net = tf.layers.batch_normalization(net, fused=False)
+	# net = slim.batch_norm(net, fused=True)
 	net = tf.nn.relu(net)
 	return net
-
-
-# def ConvBlock(inputs, n_filters, kernel_size=[3, 3]):
-# 	"""
-# 	Builds the conv block for MobileNets
-# 	Apply successivly a 2D convolution, BatchNormalization relu
-# 	"""
-# 	# Skip pointwise by setting num_outputs=Non
-# 	net = slim.conv2d(inputs, n_filters, kernel_size=[1, 1], activation_fn=None)
-# 	net = slim.batch_norm(net, fused=True)
-# 	net = tf.nn.relu(net)
-# 	return net
 
 def DepthwiseSeparableConvBlock(inputs, n_filters, kernel_size=[3, 3]):
 	"""
@@ -44,6 +28,7 @@ def DepthwiseSeparableConvBlock(inputs, n_filters, kernel_size=[3, 3]):
 	net = tf.nn.relu(net)
 	net = slim.conv2d(net, n_filters, kernel_size=[1, 1], activation_fn=None)
 	net = tf.layers.batch_normalization(net, fused=False)
+	# net = slim.batch_norm(net, fused=True)
 	net = tf.nn.relu(net)
 	return net
 
@@ -53,7 +38,7 @@ def conv_transpose_block(inputs, n_filters, kernel_size=[3, 3]):
 	Apply successivly Transposed Convolution, BatchNormalization, ReLU nonlinearity
 	"""
 	net = slim.conv2d_transpose(inputs, n_filters, kernel_size=[3, 3], stride=[2, 2], activation_fn=None)
-	net = tf.nn.relu(tf.layers.batch_normalization(net, fused=False))
+	net = tf.nn.relu(slim.batch_norm(net))
 	return net
 
 def build_mobile_unet(inputs, preset_model, num_classes):

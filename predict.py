@@ -39,7 +39,7 @@ network, _ = model_builder.build_model(args.model, net_input=net_input,
                                         num_classes=17,
                                         crop_width=args.crop_width,
                                         crop_height=args.crop_height,
-                                        is_training=False, frontend="ResNet50")
+                                        is_training=False, frontend="MobileNetV2")
 
 sess.run(tf.global_variables_initializer())
 

@@ -74,8 +74,8 @@ def main(_):
         net_input = tf.placeholder(name='input', dtype=tf.float32, shape=[None, None, None, 3])
         net_output = tf.placeholder(tf.float32, shape=[None, None, None, 32])
 
-        net, _ = model_builder.build_model(model_name="BiSeNet", frontend="ResNet50", net_input=net_input,
-                                                     num_classes=32, crop_width=512,
+        net, _ = model_builder.build_model(model_name="MobileUNet", frontend="MobileNetV2", net_input=net_input,
+                                                     num_classes=17, crop_width=512,
                                                      crop_height=512, is_training=False)
         # net =
         #net = psp_net({'inputs': img_tf}, is_training = False, num_classes = NUM_CLASSES)
@@ -87,12 +87,12 @@ def main(_):
         #raw_output = net.layers['conv6']
         # output = tf.image.resize_bilinear(raw_output, tf.shape(img_tf)[1:3,], name = 'raw_output')
         #output = tf.nn.softmax(raw_output)
-        output = tf.argmax(raw_output, dimension = 3)
-        pred = tf.expand_dims(output, dim = 3, name = 'indices')
+        # output = tf.argmax(raw_output, dimension = 3)
+        # pred = tf.expand_dims(output, dim = 3, name = 'indices')
 
         # Adding additional params to graph. It is necessary also to point them as outputs in graph freeze conversation, otherwise they will be cuted
-        tf.constant(label_colours, name = 'label_colours')
-        tf.constant(label_names, name = 'label_names')
+        # tf.constant(label_colours, name = 'label_colours')
+        # tf.constant(label_names, name = 'label_names')
 
         shape = INPUT_SIZE.split(',')
         shape = (int(shape[0]), int(shape[1]), 3)
