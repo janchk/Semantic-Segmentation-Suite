@@ -8,6 +8,7 @@
 venv/
 CamVid/*
 autovision_dataset/*
+autovision_enh_dataset/*
 CamVid_dataset/*
 models/*.graph
 models/*.pyc
