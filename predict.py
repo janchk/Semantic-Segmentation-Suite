@@ -51,6 +51,8 @@ for img in os.listdir(args.imagepath):
     print("Testing image " + img)
     image = os.path.join(args.imagepath, img)
     loaded_image = utils.load_image(image)
+    img_shape = loaded_image.shape
+#    print(img_shape)
     resized_image = cv2.resize(loaded_image, (args.crop_width, args.crop_height))
     input_image = np.expand_dims(np.float32(resized_image[:args.crop_height, :args.crop_width]), axis=0) / 255.0
 
@@ -68,6 +70,7 @@ for img in os.listdir(args.imagepath):
 
     file_name = utils.filepath_to_name(image)
     cv2.imwrite("preds/%s_pred.png" % (file_name), cv2.cvtColor(np.uint8(overlayed_img), cv2.COLOR_RGB2BGR))
+    cv2.imwrite("preds/%s_mask.png" % (file_name), cv2.cvtColor((cv2.resize(np.uint8(out_vis_image), (img_shape[0], img_shape[1]))), cv2.COLOR_RGB2BGR))
 
 
 
