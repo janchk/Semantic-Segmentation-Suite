@@ -102,7 +102,7 @@ sess = tf.Session(config=config)
 
 # Compute your softmax cross entropy loss
 net_input = tf.placeholder(tf.float32, shape=[None, 512, 512, 3])
-net_output = tf.placeholder(tf.float32, shape=[None, None, None, num_classes])
+net_output = tf.placeholder(tf.float32, shape=[None, 512, 512, num_classes])
 
 network, init_fn = model_builder.build_model(model_name=args.model, frontend=args.frontend, net_input=net_input,
                                              num_classes=num_classes, crop_width=args.crop_width,
@@ -127,11 +127,14 @@ network, init_fn = model_builder.build_model(model_name=args.model, frontend=arg
 loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=network, labels=net_output))
 
 
-new_network_node = tf.argmax(network, name="output_name_argmax")
-new_network = tf.nn.softmax(network, name="output_name_softmax")
-new_network = tf.argmax(new_network, name="output_name_softmax_argmax")
 
-opt = tf.train.RMSPropOptimizer(learning_rate=0.0001, decay=0.995).minimize(loss, var_list=[var for var in
+new_network = tf.nn.softmax(network, name="output_name_softmax")
+new_network = tf.argmax(new_network, name="output_name_softmax_argmax", axis=3)
+
+update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+
+with tf.control_dependencies(update_ops):
+    opt = tf.train.RMSPropOptimizer(learning_rate=0.0001, decay=0.995).minimize(loss, var_list=[var for var in
                                                                                             tf.trainable_variables()])
 
 saver = tf.train.Saver(max_to_keep=1000)

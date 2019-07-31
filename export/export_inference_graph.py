@@ -2,7 +2,9 @@ import os, argparse
 import tensorflow as tf
 from export.pb_to_uff_convert import optimize_pb_graph
 from tensorflow.python.tools import freeze_graph
+from tensorflow.tools.graph_transforms import TransformGraph
 import numpy as np
+
 
 dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -32,9 +34,18 @@ def freeze_graph_func(model_dir, output_node_names):
     # builder = tf.saved_model.builder.SavedModelBuilder(absolute_model_dir + "/new")
     # We clear devices to allow TensorFlow to control on which device it will load operations
     clear_devices = True
+    
+    transforms = ['add_default_attributes',
+                'remove_nodes(op=Identity, op=CheckNumerics)',
+                'merge_duplicate_nodes',
+                'fold_constants(ignore_errors=true)',
+                'fold_batch_norms',
+                'fold_old_batch_norms',
+                'sort_by_execution_order']
 
 
-
+    # with tf.Graph().as_default() as graph:
+    #     x = tf.placeholder(shape=[None, 512, 512, 3], dtype=tf.float32, name="import/input")
     # We start a session using a temporary fresh Graph
     with tf.Session(graph=tf.Graph()) as sess:
         # We import the meta graph in the current default Graph
@@ -49,20 +60,26 @@ def freeze_graph_func(model_dir, output_node_names):
             graph.as_graph_def(),  # The graph_def is used to retrieve the nodes
             output_node_names.split(",")  # The output node names are used to select the useful nodes
         )
-        # for node in output_graph_def.node:
-        #     if node.op == 'RefSwitch':
-        #         node.op = 'Switch'
-        #         for index in xrange(len(node.input)):
-        #             if 'moving_' in node.input[index]:
-        #                 node.input[index] = node.input[index] + '/read'
-        #     elif node.op == 'AssignSub':
-        #         node.op = 'Sub'
-        #         if 'use_locking' in node.attr: del node.attr['use_locking']
+        optimized_graph_def = TransformGraph(
+            output_graph_def,
+            inputs='Placeholder',
+            outputs=output_node_names,
+            transforms=transforms
+        )
+        for node in output_graph_def.node:
+            if node.op == 'RefSwitch':
+                node.op = 'Switch'
+                for index in xrange(len(node.input)):
+                    if 'moving_' in node.input[index]:
+                        node.input[index] = node.input[index] + '/read'
+            elif node.op == 'AssignSub':
+                node.op = 'Sub'
+                if 'use_locking' in node.attr: del node.attr['use_locking']
 
         # Finally we serialize and dump the output graph to the filesystem
 
         with tf.gfile.GFile(output_graph, "wb") as f:
-            f.write(output_graph_def.SerializeToString())
+            f.write(optimized_graph_def.SerializeToString())
 
         print("%d ops in the final graph." % len(output_graph_def.node))
 

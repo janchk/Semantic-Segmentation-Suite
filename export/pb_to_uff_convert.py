@@ -19,9 +19,7 @@ def optimize_pb_graph(graph_def, output_nodes, output_name,  sess):
     :param sess:
     :return: written file
     """
-    graph_def = tf.graph_util.convert_variables_to_constants(
-        sess, graph_def, output_nodes)
-    tf.graph_util.remove_training_nodes(graph_def)
+
     name = output_name.split(".")[0]
     output_name = "%s.uff" %name
     uff.from_tensorflow(
@@ -45,4 +43,8 @@ if __name__ == "__main__":
             with tf.gfile.GFile(input_filename, 'rb') as f:
                 graph_def = tf.GraphDef()
                 graph_def.ParseFromString(f.read())
+
+                graph_def = tf.graph_util.convert_variables_to_constants(
+                    sess, graph_def, output_nodes)
+                tf.graph_util.remove_training_nodes(graph_def)
             optimize_pb_graph(graph_def, output_nodes, output_name, sess)

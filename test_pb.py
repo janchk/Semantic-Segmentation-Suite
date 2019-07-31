@@ -79,6 +79,8 @@ sess, network, net_input = load_from_pb(shape, args.pb_file)
 print("Loading the data ...")
 train_input_names,train_output_names, val_input_names, val_output_names, test_input_names, test_output_names = utils.prepare_data(dataset_dir=args.dataset)
 
+test_input_names = ["Test/comparing/seq_512.png"]
+
 # Create directories if needed
 if not os.path.isdir("%s"%("Test")):
         os.makedirs("%s"%("Test"))
@@ -103,13 +105,18 @@ for ind in range(len(test_input_names)):
     gt = helpers.reverse_one_hot(helpers.one_hot_it(gt, label_values))
 
     st = time.time()
-    output_image = sess.run(network,feed_dict={net_input:input_image})
+    output_image = sess.run(network, feed_dict={net_input:input_image})
 
     run_times_list.append(time.time()-st)
     print("\n output image shape is {}".format(output_image.shape))
     out_vis_image = np.array(output_image[0,:,:])
     #out_vis_image = np.array(output_image[0,:,:,:])
-    print(out_vis_image[0][10])
+    print(out_vis_image[0])
+ #   fname = "out_pb_argmax.txt"
+ #   fle = open(fname, "w+")
+ #   with np.printoptions(threshold=np.inf):
+ #       fle.write(str(out_vis_image))
+ #   fle.close()
     #out_vis_image = helpers.reverse_one_hot(out_vis_image)
     out_vis_image = helpers.colour_code_segmentation(out_vis_image, label_values)
 
